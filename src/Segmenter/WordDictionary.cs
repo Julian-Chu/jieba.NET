@@ -14,6 +14,7 @@ namespace JiebaNet.Segmenter
         private static readonly string MainDict = ConfigManager.MainDictFile;
 
         internal IDictionary<string, int> Trie = new Dictionary<string, int>();
+        internal ISet<string> ForceSplitWords = new HashSet<string>();
 
         /// <summary>
         /// total occurrence of all words.
@@ -112,6 +113,11 @@ namespace JiebaNet.Segmenter
                     Trie[wfrag] = 0;
                 }
             }
+
+            if (freq == 0)
+            {
+                ForceSplitWords.Add(word);
+            }
         }
 
         public void DeleteWord(string word)
@@ -127,7 +133,7 @@ namespace JiebaNet.Segmenter
                 freq *= GetFreqOrDefault(seg) / Total;
             }
 
-            return Math.Max((int)(freq * Total) + 1, GetFreqOrDefault(word));
+            return Math.Max((int) (freq * Total) + 1, GetFreqOrDefault(word));
         }
     }
 }

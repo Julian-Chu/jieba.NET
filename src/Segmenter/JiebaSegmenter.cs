@@ -22,7 +22,8 @@ namespace JiebaNet.Segmenter
 
         #region Regular Expressions
 
-        internal static readonly Regex RegexChineseDefault = new Regex(@"([\u4E00-\u9FD5a-zA-Z0-9+#&\._%·\-]+)", RegexOptions.Compiled);
+        internal static readonly Regex RegexChineseDefault =
+            new Regex(@"([\u4E00-\u9FD5a-zA-Z0-9+#&\._%·\-]+)", RegexOptions.Compiled);
 
         internal static readonly Regex RegexSkipDefault = new Regex(@"(\r\n|\s)", RegexOptions.Compiled);
 
@@ -31,7 +32,8 @@ namespace JiebaNet.Segmenter
 
         internal static readonly Regex RegexEnglishChars = new Regex(@"[a-zA-Z0-9]", RegexOptions.Compiled);
 
-        internal static readonly Regex RegexUserDict = new Regex("^(?<word>.+?)(?<freq> [0-9]+)?(?<tag> [a-z]+)?$", RegexOptions.Compiled);
+        internal static readonly Regex RegexUserDict =
+            new Regex("^(?<word>.+?)(?<freq> [0-9]+)?(?<tag> [a-z]+)?$", RegexOptions.Compiled);
 
         #endregion
 
@@ -52,19 +54,20 @@ namespace JiebaNet.Segmenter
         {
             var reHan = cutAll ? RegexChineseCutAll : RegexChineseDefault;
             var reSkip = cutAll ? RegexSkipCutAll : RegexSkipDefault;
-            var cutMethod = cutAll ? CutAll : hmm ? CutDag : (Func<string, IEnumerable<string>>)CutDagWithoutHmm;
+            var cutMethod = cutAll ? CutAll : hmm ? CutDag : (Func<string, IEnumerable<string>>) CutDagWithoutHmm;
             return CutIt(text, cutMethod, reHan, reSkip, cutAll);
         }
-        
-        public IEnumerable<IEnumerable<string>> CutInParallel(IEnumerable<string> texts, bool cutAll = false, bool hmm = true)
+
+        public IEnumerable<IEnumerable<string>> CutInParallel(IEnumerable<string> texts, bool cutAll = false,
+            bool hmm = true)
         {
             var reHan = cutAll ? RegexChineseCutAll : RegexChineseDefault;
             var reSkip = cutAll ? RegexSkipCutAll : RegexSkipDefault;
-            var cutMethod = cutAll ? CutAll : hmm ? CutDag : (Func<string, IEnumerable<string>>)CutDagWithoutHmm;
+            var cutMethod = cutAll ? CutAll : hmm ? CutDag : (Func<string, IEnumerable<string>>) CutDagWithoutHmm;
 
             return texts.AsParallel().AsOrdered().Select(text => CutIt(text, cutMethod, reHan, reSkip, cutAll));
         }
-        
+
         public IEnumerable<string> CutInParallel(string text, bool cutAll = false, bool hmm = true)
         {
             var lines = text.SplitLines();
@@ -107,12 +110,12 @@ namespace JiebaNet.Segmenter
 
             return result;
         }
-        
+
         public IEnumerable<IEnumerable<string>> CutForSearchInParallel(IEnumerable<string> texts, bool hmm = true)
         {
             return texts.AsParallel().AsOrdered().Select(line => CutForSearch(line, hmm));
         }
-        
+
         public IEnumerable<string> CutForSearchInParallel(string text, bool hmm = true)
         {
             var lines = text.SplitLines();
@@ -149,6 +152,7 @@ namespace JiebaNet.Segmenter
                             }
                         }
                     }
+
                     if (width > 3)
                     {
                         for (var i = 0; i < width - 2; i++)
@@ -196,10 +200,12 @@ namespace JiebaNet.Segmenter
                         frag = sentence.Sub(k, i + 1);
                     }
                 }
+
                 if (templist.Count == 0)
                 {
                     templist.Add(k);
                 }
+
                 dag[k] = templist;
             }
 
@@ -218,15 +224,18 @@ namespace JiebaNet.Segmenter
                 var candidate = new Pair<int>(-1, double.MinValue);
                 foreach (int x in dag[i])
                 {
-                    var freq = Math.Log(WordDict.GetFreqOrDefault(sentence.Sub(i, x + 1))) - logtotal + route[x + 1].Freq;
+                    var freq = Math.Log(WordDict.GetFreqOrDefault(sentence.Sub(i, x + 1))) - logtotal +
+                               route[x + 1].Freq;
                     if (candidate.Freq < freq)
                     {
                         candidate.Freq = freq;
                         candidate.Key = x;
                     }
                 }
+
                 route[i] = candidate;
             }
+
             return route;
         }
 
@@ -287,8 +296,10 @@ namespace JiebaNet.Segmenter
                         AddBufferToWordList(tokens, buf);
                         buf = string.Empty;
                     }
+
                     tokens.Add(w);
                 }
+
                 x = y;
             }
 
@@ -328,6 +339,7 @@ namespace JiebaNet.Segmenter
                         words.Add(buf);
                         buf = string.Empty;
                     }
+
                     words.Add(l_word);
                     x = y;
                 }
@@ -342,7 +354,7 @@ namespace JiebaNet.Segmenter
         }
 
         internal IEnumerable<string> CutIt(string text, Func<string, IEnumerable<string>> cutMethod,
-                                           Regex reHan, Regex reSkip, bool cutAll)
+            Regex reHan, Regex reSkip, bool cutAll)
         {
             var result = new List<string>();
             var blocks = reHan.Split(text);
@@ -357,7 +369,17 @@ namespace JiebaNet.Segmenter
                 {
                     foreach (var word in cutMethod(blk))
                     {
-                        result.Add(word);
+                        if (!WordDict.ForceSplitWords.Contains(word))
+                        {
+                            result.Add(word);
+                        }
+                        else
+                        {
+                            foreach (var c in word.ToCharArray())
+                            {
+                                result.Add(c.ToString());
+                            }
+                        }
                     }
                 }
                 else
@@ -446,6 +468,7 @@ namespace JiebaNet.Segmenter
             {
                 freq = WordDict.SuggestFreq(word, Cut(word, hmm: false));
             }
+
             WordDict.AddWord(word, freq);
 
             // Add user word tag of POS
